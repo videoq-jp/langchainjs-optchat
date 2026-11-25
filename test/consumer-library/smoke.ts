@@ -4,13 +4,14 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { OptChatMessageHistory, createMemoryTools } from '@videoq-jp/langchainjs-optchat';
 import { OptChatFileMessageHistory } from '@videoq-jp/langchainjs-optchat/node';
-import { createOptChatNode, OptChatAnnotation } from '@videoq-jp/langchainjs-optchat/langgraph';
+import { createOptChatNode, createOptChatTools, OptChatAnnotation } from '@videoq-jp/langchainjs-optchat/langgraph';
 import { createOptChatMiddleware } from '@videoq-jp/langchainjs-optchat/middleware';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import { MessagesAnnotation, StateGraph, MemorySaver, InMemoryStore, START, END } from '@langchain/langgraph';
 import { FakeListChatModel } from '@langchain/core/utils/testing';
 import type { BaseListChatMessageHistory, BaseChatMessageHistory } from '@langchain/core/chat_history';
 import { BaseCheckpointSaver, BaseStore } from '@langchain/langgraph-checkpoint';
+import { ToolNode } from '@langchain/langgraph/prebuilt';
 import { createAgent } from 'langchain';
 
 assert.equal(existsSync('node_modules/@earendil-works/pi-ai'), false);
@@ -28,10 +29,15 @@ try {
   const graph = new StateGraph(OptChatAnnotation)
     .addNode('chat', createOptChatNode({ compressor, model: { invoke: async () => new AIMessage('works') } }))
     .addEdge(START, 'chat').addEdge('chat', END).compile({ checkpointer: saver, store });
+  const memoryTools = createOptChatTools({ compressor, search: true });
+  assert.equal(memoryTools.length, 3);
   const config = { configurable: { thread_id: 'test' } };
   await graph.invoke({ messages: [new HumanMessage('hello')] }, config);
   const result = await graph.invoke({ messages: [new HumanMessage('again')] }, config);
   assert.equal(result.messages.length, 4);
+  const retrieval = await new ToolNode(memoryTools).invoke({ ...result, messages: [...result.messages, new AIMessage({ content: '', tool_calls: [{ id: 'external-zoom', name: 'optchat_zoom', args: { id: 0 } }] })] });
+  assert.equal(retrieval.messages[0].tool_call_id, 'external-zoom');
+  assert.match(JSON.stringify(retrieval.messages[0].content), /hello/);
   assert.ok(result.optchat?.saved.tree.length);
   assert.equal(result.optchat?.saved.entries.length, 4);
   const agent = createAgent({ model: new FakeListChatModel({ responses: ['agent works'] }), checkpointer: saver, store, tools: [], middleware: [createOptChatMiddleware({ compressor })] });

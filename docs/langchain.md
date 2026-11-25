@@ -50,19 +50,23 @@ For SQLite, set `checkpointer: SqliteSaver.fromConnString('./checkpoints.sqlite'
 
 ```ts
 import { HumanMessage } from '@langchain/core/messages';
-import { StateGraph, MessagesAnnotation, MemorySaver, START, END } from '@langchain/langgraph';
-import { createOptChatNode, OptChatAnnotation } from '@videoq-jp/langchainjs-optchat/langgraph';
+import { StateGraph, MemorySaver, START, END } from '@langchain/langgraph';
+import { ToolNode, toolsCondition } from '@langchain/langgraph/prebuilt';
+import { createOptChatNode, createOptChatTools, OptChatAnnotation } from '@videoq-jp/langchainjs-optchat/langgraph';
 
-const checkpointer = new MemorySaver();
+const memoryOptions = { compressor, search: true };
+const tools = createOptChatTools(memoryOptions);
 const graph = new StateGraph(OptChatAnnotation)
   .addNode('chat', createOptChatNode({
-    model: chatModel,
-    compressor,
+    ...memoryOptions,
+    model: chatModel.bindTools(tools),
     instructions: 'Answer in Japanese.',
   }))
+  .addNode('tools', new ToolNode(tools))
   .addEdge(START, 'chat')
-  .addEdge('chat', END)
-  .compile({ checkpointer });
+  .addConditionalEdges('chat', toolsCondition, ['tools', END])
+  .addEdge('tools', 'chat')
+  .compile({ checkpointer: new MemorySaver() });
 const config = { configurable: { thread_id: 'customer-123' } };
 await graph.invoke({ messages: [new HumanMessage('Hello')] }, config);
 ```
@@ -77,7 +81,7 @@ const State = new StateSchema({ messages: MessagesValue, optchat: optChatMemoryS
 
 Using the old `MessagesAnnotation` alone omits the summary state field, so use the supplied annotation/schema when retaining memory across calls. Native `createAgent` middleware adds it automatically.
 
-Use the official message reducer, editing/removal operations, state APIs, history traversal, forks, streaming and interrupts normally. A standard `ToolNode` can be connected after the model node when the response contains tool calls. The complete current human/tool exchange is passed intact to the model.
+Use the official message reducer, editing/removal operations, state APIs, history traversal, forks, streaming and interrupts normally. Bind the tools returned by `createOptChatTools(options)` to your model and pass the same list to the official `ToolNode`, as above. Add application tools to that same list. The tools resolve from `runtime.state` for each invocation, so threads, forks, removals and SQLite reopen use their own saved memory. The complete current human/tool exchange is passed intact to the model.
 
 The upstream core is restored from the selected checkpoint's `optchat.saved` log, summary nodes and saved views. New messages are appended and only missing nodes are built. Ordinary turns and process restarts preserve completed work. When a message is edited/deleted, only nodes touching the changed suffix are dropped; unaffected prefix nodes survive. Time-travel forks use the tree stored at their own checkpoint.
 
@@ -130,7 +134,20 @@ Histories store one canonical session record with indexing disabled. Serialize w
 
 `createMemoryTools(() => history.memory)` returns LangChain `optchat_zoom`, `optchat_date`, and `optchat_search` tools for the history's latest derived snapshot. `context()` rereads canonical originals before use, detecting external edits/removals. Run the tools through your normal tool loop. The native middleware automatically registers `optchat_zoom` and `optchat_date`; add `search: true` to enable `optchat_search`. Its tool handler reads the current checkpointed memory state. Do not separately register another tool with these same names when using the middleware.
 
-The built-in compactor and retrieval output are text-based. Original multimodal blocks and tool metadata/artifacts remain intact in canonical histories/checkpoints and the current turn. The historical summary is text, and image-aware summarization requires a suitable custom compressor.
+Inline PNG, JPEG, GIF and WebP images are kept separately under stable references and supplied to the built-in compressor as image blocks. `optchat_zoom` returns original image blocks alongside the text for a message; summary zooms stay text. Canonical messages and artifacts are preserved. The checkpoint's `optchat.saved.images` retains the image bytes, including after SQLite reopen. Edits/removals prune bytes no longer referenced by the retained log.
+
+HTTP(S) image blocks require an application `resolveImage(url, signal?)` function returning `{ mimeType, data: Uint8Array }`. Pass it alongside `compressor` to the middleware, graph node/tools, history or one-off context. The application controls credentials, allowed hosts and response size. The resolver is called when a new image enters memory; a saved checkpoint reuses its bytes. Supported image shapes include OpenAI `image_url`, LangChain `image` with `base64`/`mime_type` or `data`/`mimeType`, and Anthropic `source` base64/URL blocks. Invalid or unsupported formats fail explicitly.
+
+The default compressor rejects token-limit/tool-call replies, retries at most five times, and uses upstream refusal/shortest-complete-answer behavior. Completion detection uses the model's `response_metadata`; a custom model that omits completion metadata cannot distinguish truncated text. If the model rejects image input, it retries once with image names only, as upstream; visual details then require an image-capable model.
+
+| Entry point | Incremental state | Retrieval |
+| --- | --- | --- |
+| Native `createAgent` middleware | Automatic official checkpoint state | zoom/date registered; search opt-in |
+| Plain `StateGraph` | `OptChatAnnotation` or explicit schema + official checkpointer | `createOptChatTools` + model binding + official `ToolNode` |
+| `OptChatMessageHistory` | In-process cache; canonical originals in selected history backend; reopening rebuilds the cache | `createMemoryTools(() => history.memory)` after refreshing `context()` |
+| `withOptChatContext` | One-off projection; optional saved checkpoint input | Use the native graph/agent integrations for an automatic tool loop |
+
+Tool results are matched to their calls by `tool_call_id`, including parallel results received in another order. Original-text search excludes OptChat zoom/search copies while retaining independent user/AI text and ordinary tool results. Deleting one canonical message does not redact separately retained quotations or tool results; remove those messages as well when erasing all copies of its text.
 
 `budget` is a UTF-8 byte target for the summary view, not a limit on the entire model request or on tokens. The complete current turn and system messages are retained. Pending/failed compaction can temporarily leave an oversized view; monitor your model-input budget and compressor errors. Provider authentication/retries belong to the supplied model. Abort signals reach context waits and model calls; hook-local workers close after their state has been checkpointed. Call `history.close()` to stop a standalone history's background compaction; the host owns backend clients and their lifecycle.
 
