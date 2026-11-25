@@ -12,15 +12,15 @@ jobs:
     env:
       ANTHROPIC_OAUTH_TOKEN: ${{ secrets.OPTCHAT_TEST_ANTHROPIC_OAUTH_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm install -g @earendil-works/pi-coding-agent@1.1.0
       - id: upterm
-        uses: owenthereal/action-upterm@v2
+        uses: owenthereal/action-upterm@6c2d60e09009f59cb4c45c88767c78701f14d121 # v2
         with:
           limit-access-to-actor: true
           detached: true
@@ -28,7 +28,7 @@ jobs:
       # The API serves a job's log only after it ends, so the command goes out as an artifact, downloadable while it runs.
       - run: echo "${{ steps.upterm.outputs.ssh-command }}" > ssh-command.txt
         shell: bash
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ssh-command
           path: ssh-command.txt

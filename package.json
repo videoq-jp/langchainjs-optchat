@@ -100,5 +100,9 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "packageManager": "npm@12.2.3",
+  "allowScripts": {
+    "better-sqlite3": true
   }
 }

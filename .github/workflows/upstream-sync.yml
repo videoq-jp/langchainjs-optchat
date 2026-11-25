@@ -1,0 +1,33 @@
+name: Upstream Sync
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+jobs:
+  check-upstream:
+    if: github.repository == 'videoq-jp/langchainjs-optchat' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { inspect } = require('./.github/scripts/upstream-sync.cjs');
+            const { notify } = require('./.github/scripts/operations-notify.cjs');
+            let report;
+            try { report = await inspect({ github, pin: JSON.parse(fs.readFileSync('.github/upstream.json', 'utf8')) }); }
+            catch { report = { status: 'error', summary: 'OptChatの参照元の検査を完了できませんでした。', details: [] }; }
+            await notify({ github, context, core, kind: 'upstream-sync', title: 'OptChat upstream更新', report });
+            if (report.status === 'error') core.setFailed(report.summary);
