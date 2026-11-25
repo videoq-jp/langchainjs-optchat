@@ -67,6 +67,8 @@ jobs:
           manager: npm
       - run: npm ci --ignore-scripts
       - run: npm rebuild better-sqlite3
+      - name: Verify the SQLite binding for this Node ABI
+        run: node -e "const Database = require('better-sqlite3'); const db = new Database(':memory:'); db.close();"
       - run: npm run check
       - run: npm test
       - run: npm run build

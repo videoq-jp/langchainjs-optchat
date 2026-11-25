@@ -45,7 +45,8 @@ async function install(data, prefix, request = fetch) {
   fs.mkdirSync(prefix, { recursive: true });
   const archive = path.join(prefix, "npm.tgz");
   fs.writeFileSync(archive, body);
-  const entries = execFileSync("tar", ["-tzf", archive], { encoding: "utf8" })
+  const tar = nodeProcess.platform === "win32" ? path.join(nodeProcess.env.SystemRoot || "C:\\Windows", "System32", "tar.exe") : "tar";
+  const entries = execFileSync(tar, ["-tzf", archive], { encoding: "utf8" })
     .trim()
     .split("\n");
   if (
@@ -55,7 +56,7 @@ async function install(data, prefix, request = fetch) {
     )
   )
     throw Error("Unsafe npm archive path");
-  execFileSync("tar", ["-xzf", archive, "-C", prefix]);
+  execFileSync(tar, ["-xzf", archive, "-C", prefix]);
   const bin = path.join(prefix, "bin");
   fs.mkdirSync(bin, { recursive: true });
   for (const name of ["npm", "npx"]) {
