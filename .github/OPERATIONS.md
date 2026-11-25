@@ -23,3 +23,7 @@ Runtime Updates は毎日09:13 JSTにNode.js・npmの更新PRを準備します�
 CIはLinux/Windowsで型チェック・全テスト・ビルドを実施し、npm tarballをNode 22.19 / 22 / 24 / 26の独立consumerで検証します。SQLiteのネイティブビルド以外はインストールスクリプトを実行しません。
 
 元OptChatの更新は毎日09:00 JSTに `.github/upstream.json` の参照済みcommitと比較し、Bot所有の運用Issueで通知します。自動でライブラリのソースを上書きしません。
+
+運用設定の導入元は [langchainjs-postgresの15c1614](https://github.com/videoq-jp/langchainjs-postgres/commit/15c16143636ef0a78c4f1420f908a1629cacfe98) です。Postgres専用のDBサービスやリリース自動化を移さず、OptChatの既存テスト・パッケージ契約に合わせています。
+
+通常PRもmainへはマージキューを使います。CI成功後にGitHubのMerge when ready、または `gh pr merge <番号> --auto` でキューへ進め、`merge_group` のCI成功を待ちます。管理者にも必須チェックを適用します。依存更新の自動処理だけを止める場合は `DEPENDENCY_AUTOMERGE_ENABLED=false` にし、mainの保護は維持してください。

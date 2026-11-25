@@ -4,7 +4,7 @@ OptChat summary-tree conversation memory for **LangChain.js and LangGraph.js**.
 
 This independent integration adapts the MIT-licensed memory engine from [jonaslsaa/pi-optchat](https://github.com/jonaslsaa/pi-optchat). Canonical messages and execution state use the official history, checkpointer and store contracts. The upstream summary tree and its views are retained in checkpointed `optchat` state. Normal turns append only new messages; edits/deletions invalidate only affected suffix nodes, and forks restore their own saved tree.
 
-[日本語ガイド](docs/langchain.ja.md) · [Integration guide](docs/langchain.md) · [API compatibility contract](docs/langchain-api.md)
+[日本語ガイド](docs/langchain.ja.md) · [Integration guide](docs/langchain.md) · [API compatibility contract](docs/langchain-api.md) · [GitHub operations](.github/OPERATIONS.md)
 
 ## Install
 
