@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches: [main, develop]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  supply-chain:
+    name: Supply Chain Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Review newly introduced vulnerabilities
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
+        with:
+          fail-on-severity: low
+          fail-on-scopes: runtime,development,unknown
+          license-check: false
+          comment-summary-in-pr: never
+          retry-on-snapshot-warnings: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - uses: ./.github/actions/setup-package-manager
+        with:
+          manager: npm
+      - name: Check lockfile sources, integrity and vulnerability delta
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+        run: node .github/scripts/supply-chain.cjs --base "$BASE_SHA"
+      # Verify registry signatures before any package code executes in this job.
+      - run: npm ci --ignore-scripts
+      - run: npm audit signatures
+
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - uses: ./.github/actions/setup-package-manager
+        with:
+          manager: npm
+      - run: npm ci --ignore-scripts
+      - run: npm rebuild better-sqlite3
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+
+  package:
+    name: Package (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22.19.0", "22", "24", "26"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - uses: ./.github/actions/setup-package-manager
+        with:
+          manager: npm
+      - run: npm ci --ignore-scripts
+      - name: Pack and typecheck the installed library without Pi
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          cp -R test/consumer-library "$RUNNER_TEMP/consumer-library"
+          cd "$RUNNER_TEMP/consumer-library"
+          npm install "$RUNNER_TEMP"/videoq-jp-langchainjs-optchat-*.tgz --ignore-scripts
+          npm run check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - name: Run the installed consumer on the target Node version
+        working-directory: ${{ runner.temp }}/consumer-library
+        run: node dist/smoke.js
+
+  workflow-security:
+    name: Automation Policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - uses: ./.github/actions/setup-package-manager
+        with:
+          manager: npm
+      - run: node --test .github/scripts/*.test.cjs
+      - name: Require consistent interpreter and package manager pins
+        run: node .github/scripts/runtime-versions.cjs check
+
+  ci-success:
+    name: CI Success
+    if: ${{ always() }}
+    needs: [test, package, workflow-security, supply-chain]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require every CI job to succeed
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          CI_NEEDS: ${{ toJSON(needs) }}
+        with:
+          script: |
+            const { requireCiSuccess } = require('./.github/scripts/dependency-automation.cjs');
+            requireCiSuccess(JSON.parse(process.env.CI_NEEDS));
