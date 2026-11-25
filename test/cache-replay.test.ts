@@ -119,7 +119,7 @@ test('turns and compactions read nearly all their input from the cache, also aft
     for (let step = 0; ; step++) {
       fake.as(step === 0 && long ? 'turn after a long one' : 'turn');
       const reply = await registry.streamSimple(model, { messages: convertToLlm(buildContext([], run, view, MASTER, previous)) }, { onPayload: payload => cachePayload(payload) }).result();
-      assert.equal(reply.stopReason, 'stop', reply.errorMessage);
+      assert.equal(reply.stopReason, 'stop', reply.errorMessage ?? `unexpected stop reason ${reply.stopReason}`);
       const next = step < steps ? assistant([{ type: 'toolCall', id: `t${step}`, name: 'zoom', arguments: { query: text('tool', 20, 400) } }])
         : assistant([{ type: 'text', text: text('talk', 100, 2500) }]);
       run.push(next); logMessage(memory, next);
