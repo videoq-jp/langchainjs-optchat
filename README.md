@@ -1,4 +1,4 @@
-# langchain-optchat
+# @videoq-jp/langchainjs-optchat
 
 OptChat summary-tree conversation memory for **LangChain.js and LangGraph.js**.
 
@@ -8,14 +8,14 @@ This independent integration adapts the MIT-licensed memory engine from [jonasls
 
 ## Install
 
-This package has not been published to npm. Source and tracked fixes: [videoq-jp/langchain-optchat](https://github.com/videoq-jp/langchain-optchat). See [release preparation](docs/npm-release.md).
+This package has not been published to npm. Source and tracked fixes: [videoq-jp/langchainjs-optchat](https://github.com/videoq-jp/langchainjs-optchat). See [release preparation](docs/npm-release.md).
 
 ```sh
 # In this checkout
 npm ci
 npm pack
 # In your application (adjust the path)
-npm install /path/to/langchain-optchat-0.3.0.tgz
+npm install /path/to/videoq-jp-langchainjs-optchat-0.3.0.tgz
 # When using native createAgent middleware
 npm install langchain@^1.6.8
 ```
@@ -27,8 +27,8 @@ Node.js 22.19+ is required. Install a LangChain model provider separately. Pi is
 ```ts
 import { createAgent } from 'langchain';
 import { MemorySaver, InMemoryStore } from '@langchain/langgraph';
-import { createLangChainCompressor } from 'langchain-optchat';
-import { createOptChatMiddleware } from 'langchain-optchat/middleware';
+import { createLangChainCompressor } from '@videoq-jp/langchainjs-optchat';
+import { createOptChatMiddleware } from '@videoq-jp/langchainjs-optchat/middleware';
 
 // chatModel and summaryModel are configured LangChain chat models.
 const checkpointer = new MemorySaver();
@@ -75,8 +75,8 @@ For plain StateGraph, use `OptChatAnnotation` instead of `MessagesAnnotation`, o
 ## Standard LangChain history
 
 ```ts
-import { OptChatMessageHistory, createLangChainCompressor } from 'langchain-optchat';
-import { OptChatFileMessageHistory } from 'langchain-optchat/node';
+import { OptChatMessageHistory, createLangChainCompressor } from '@videoq-jp/langchainjs-optchat';
+import { OptChatFileMessageHistory } from '@videoq-jp/langchainjs-optchat/node';
 
 const history = new OptChatMessageHistory({
   history: new OptChatFileMessageHistory('./history/customer-123.json'),

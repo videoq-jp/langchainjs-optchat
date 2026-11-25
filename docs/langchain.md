@@ -1,6 +1,6 @@
 # LangChain.js / LangGraph.js integration
 
-`langchain-optchat` implements the official conversation-management contracts and adds OptChat summary context. See the [complete compatibility contract](langchain-api.md) for method signatures, tested versions and scenarios.
+`@videoq-jp/langchainjs-optchat` implements the official conversation-management contracts and adds OptChat summary context. See the [complete compatibility contract](langchain-api.md) for method signatures, tested versions and scenarios.
 
 ## Install
 
@@ -11,7 +11,7 @@ This checkout is not yet published:
 npm ci
 npm pack
 # In your application
-npm install /path/to/langchain-optchat-0.3.0.tgz
+npm install /path/to/videoq-jp-langchainjs-optchat-0.3.0.tgz
 # For native createAgent middleware
 npm install langchain@^1.6.8
 ```
@@ -23,8 +23,8 @@ Use Node.js 22.19+. Install the model-provider packages of your choice separatel
 ```ts
 import { createAgent } from 'langchain';
 import { MemorySaver, InMemoryStore } from '@langchain/langgraph';
-import { createLangChainCompressor } from 'langchain-optchat';
-import { createOptChatMiddleware } from 'langchain-optchat/middleware';
+import { createLangChainCompressor } from '@videoq-jp/langchainjs-optchat';
+import { createOptChatMiddleware } from '@videoq-jp/langchainjs-optchat/middleware';
 
 const compressor = createLangChainCompressor(summaryModel);
 const checkpointer = new MemorySaver();
@@ -51,7 +51,7 @@ For SQLite, set `checkpointer: SqliteSaver.fromConnString('./checkpoints.sqlite'
 ```ts
 import { HumanMessage } from '@langchain/core/messages';
 import { StateGraph, MessagesAnnotation, MemorySaver, START, END } from '@langchain/langgraph';
-import { createOptChatNode, OptChatAnnotation } from 'langchain-optchat/langgraph';
+import { createOptChatNode, OptChatAnnotation } from '@videoq-jp/langchainjs-optchat/langgraph';
 
 const checkpointer = new MemorySaver();
 const graph = new StateGraph(OptChatAnnotation)
@@ -71,7 +71,7 @@ await graph.invoke({ messages: [new HumanMessage('Hello')] }, config);
 
 ```ts
 import { StateSchema, MessagesValue } from '@langchain/langgraph';
-import { optChatMemorySchema } from 'langchain-optchat/langgraph';
+import { optChatMemorySchema } from '@videoq-jp/langchainjs-optchat/langgraph';
 const State = new StateSchema({ messages: MessagesValue, optchat: optChatMemorySchema });
 ```
 
@@ -90,8 +90,8 @@ Original messages never contain synthetic summary messages. The additional `optc
 ## LangChain history and existing history backends
 
 ```ts
-import { OptChatMessageHistory, OptChatStoreMessageHistory } from 'langchain-optchat';
-import { OptChatFileMessageHistory } from 'langchain-optchat/node';
+import { OptChatMessageHistory, OptChatStoreMessageHistory } from '@videoq-jp/langchainjs-optchat';
+import { OptChatFileMessageHistory } from '@videoq-jp/langchainjs-optchat/node';
 import { HumanMessage } from '@langchain/core/messages';
 
 const history = new OptChatMessageHistory({

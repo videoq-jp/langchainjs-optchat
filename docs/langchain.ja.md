@@ -1,6 +1,6 @@
 # LangChain.js／LangGraph.js 連携
 
-**langchain-optchat 0.3**は、公式の会話履歴・Checkpointer・Store・`createAgent`ミドルウェアに対応する独立した連携ライブラリです。会話の原本は公式APIで管理し、OptChatの要約ツリーはそこから作るコンテキストとして扱います。
+**@videoq-jp/langchainjs-optchat 0.3**は、公式の会話履歴・Checkpointer・Store・`createAgent`ミドルウェアに対応する独立した連携ライブラリです。会話の原本は公式APIで管理し、OptChatの要約ツリーはそこから作るコンテキストとして扱います。
 
 ## 導入
 
@@ -11,7 +11,7 @@
 npm ci
 npm pack
 # 利用側で実行。実際のパスに変更
-npm install /path/to/langchain-optchat-0.3.0.tgz
+npm install /path/to/videoq-jp-langchainjs-optchat-0.3.0.tgz
 # createAgent用ミドルウェアを使う場合
 npm install langchain@^1.6.8
 ```
@@ -39,8 +39,8 @@ Node.js 22.19以降と、利用するモデルのLangChainプロバイダーパ�
 ```ts
 import { createAgent } from 'langchain';
 import { MemorySaver, InMemoryStore } from '@langchain/langgraph';
-import { createLangChainCompressor } from 'langchain-optchat';
-import { createOptChatMiddleware } from 'langchain-optchat/middleware';
+import { createLangChainCompressor } from '@videoq-jp/langchainjs-optchat';
+import { createOptChatMiddleware } from '@videoq-jp/langchainjs-optchat/middleware';
 
 // chatModelとsummaryModelには設定済みのLangChainチャットモデルを渡す
 const checkpointer = new MemorySaver();
@@ -67,7 +67,7 @@ await checkpointer.deleteThread('customer-123');
 
 ```ts
 import { StateGraph, MessagesAnnotation, MemorySaver, START, END } from '@langchain/langgraph';
-import { createOptChatNode, OptChatAnnotation } from 'langchain-optchat/langgraph';
+import { createOptChatNode, OptChatAnnotation } from '@videoq-jp/langchainjs-optchat/langgraph';
 
 const graph = new StateGraph(OptChatAnnotation)
   .addNode('chat', createOptChatNode({
@@ -84,7 +84,7 @@ const graph = new StateGraph(OptChatAnnotation)
 
 ```ts
 import { StateSchema, MessagesValue } from '@langchain/langgraph';
-import { optChatMemorySchema } from 'langchain-optchat/langgraph';
+import { optChatMemorySchema } from '@videoq-jp/langchainjs-optchat/langgraph';
 const State = new StateSchema({ messages: MessagesValue, optchat: optChatMemorySchema });
 ```
 
@@ -106,8 +106,8 @@ const State = new StateSchema({ messages: MessagesValue, optchat: optChatMemoryS
 ## 標準の会話履歴として利用
 
 ```ts
-import { OptChatMessageHistory } from 'langchain-optchat';
-import { OptChatFileMessageHistory } from 'langchain-optchat/node';
+import { OptChatMessageHistory } from '@videoq-jp/langchainjs-optchat';
+import { OptChatFileMessageHistory } from '@videoq-jp/langchainjs-optchat/node';
 
 const history = new OptChatMessageHistory({
   history: new OptChatFileMessageHistory('./history/customer-123.json'),

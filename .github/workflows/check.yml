@@ -22,7 +22,7 @@ jobs:
           npm pack --pack-destination "$RUNNER_TEMP"
           cp -R test/consumer-library "$RUNNER_TEMP/consumer-library"
           cd "$RUNNER_TEMP/consumer-library"
-          npm install "$RUNNER_TEMP"/langchain-optchat-*.tgz --ignore-scripts
+          npm install "$RUNNER_TEMP"/videoq-jp-langchainjs-optchat-*.tgz --ignore-scripts
           npm run check
           npm run smoke
   windows:

@@ -41,10 +41,10 @@ jobs:
       - name: Skip if already on npm
         id: published
         run: |
-          status=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/langchain-optchat/$VERSION")
+          status=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/@videoq-jp%2flangchainjs-optchat/$VERSION")
           case $status in
             200)
-              echo "::notice::langchain-optchat@$VERSION is already on npm, nothing to publish"
+              echo "::notice::@videoq-jp/langchainjs-optchat@$VERSION is already on npm, nothing to publish"
               echo "done=true" >> "$GITHUB_OUTPUT" ;;
             404) ;;
             *) echo "::error::npm registry answered $status"; exit 1 ;;

@@ -1,5 +1,5 @@
 {
-  "name": "langchain-optchat",
+  "name": "@videoq-jp/langchainjs-optchat",
   "version": "0.3.0",
   "type": "module",
   "exports": {
@@ -92,11 +92,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/videoq-jp/langchain-optchat.git"
+    "url": "git+https://github.com/videoq-jp/langchainjs-optchat.git"
   },
-  "homepage": "https://github.com/videoq-jp/langchain-optchat#readme",
+  "homepage": "https://github.com/videoq-jp/langchainjs-optchat#readme",
   "bugs": {
-    "url": "https://github.com/videoq-jp/langchain-optchat/issues"
+    "url": "https://github.com/videoq-jp/langchainjs-optchat/issues"
   },
   "publishConfig": {
     "access": "public"
