@@ -50,7 +50,7 @@ test('originals can use an official history; external edits/removal invalidate o
     assert.doesNotMatch(JSON.stringify(context), /deleted secret/);
     assert.match(JSON.stringify(context), /corrected/);
     const tools = createMemoryTools(() => history.memory);
-    assert.match(await tools[0].invoke({ id: 0 }), /corrected/);
+    assert.match(String(await tools[0].invoke({ id: 0 })), /corrected/);
     assert.match(await tools[2].invoke({ text: 'deleted secret' }), /No messages/);
   } finally { await history.close(); }
 });

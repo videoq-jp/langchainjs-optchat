@@ -348,7 +348,7 @@ export class Memory {
     if (!short || images.length) try {
       text = (await this.compress({ context: this.compactionView(part), source: input, part, images,
         historical: this.root.slice(start(part), end(part)).some(entry => !!entry.origin),
-        ...(call !== undefined ? { call: { i: call, text: cap(`tool: ${this.text(call)}`, 4000) } } : {}) }, this.controller.signal)).trim();
+        ...(call !== undefined ? { call: { i: call.i, text: cap(`tool: ${call.text}`, 4000) } } : {}) }, this.controller.signal)).trim();
       if (!text) throw new Refused('Compactor returned an empty summary.');
     } catch (error) {
       if (!(error instanceof Refused) || this.stopped) throw error;
@@ -365,16 +365,30 @@ export class Memory {
     if (!this.retryAt.size) this.lastError = undefined;
     if (this.fit()) this.save();
   }
-  /** The tool call a result answers: a run of calls is followed by their results in the same order. A result that doesn't
-   * start with the call's tool name (an `Agent error`, an odd import) has none. */
+  /** Structured results match the preceding AI batch by ID. Original Pi logs pair a run of calls and results in order;
+   * a result that does not start with the call's name (an `Agent error`, an odd import) has none. */
   private callOf(i: number) {
     if (this.root[i].kind !== 'echo') return;
+    const result = this.loggedMessage(i);
+    if (result?.role === 'tool') {
+      if (typeof result.tool_call_id !== 'string') return;
+      // Match IDs rather than result order. A nearer AI message starts a new tool batch.
+      for (let j = i - 1; j >= 0; j--) {
+        if (this.root[j].kind === 'user') break;
+        const message = this.loggedMessage(j);
+        if (message?.role !== 'ai') continue;
+        const call = message.tool_calls?.find(call => call.id === result.tool_call_id);
+        return call ? { i: j, text: `${call.name} ${JSON.stringify(call.args)}`, name: call.name } : undefined;
+      }
+      return;
+    }
     let results = i;
     while (this.root[results - 1]?.kind === 'echo') results--;
     let calls = results;
     while (this.root[calls - 1]?.kind === 'tool') calls--;
     const call = calls + i - results;
-    return call < results && this.text(i).startsWith(`${this.text(call).split(' ', 1)[0]}:`) ? call : undefined;
+    return call < results && this.text(i).startsWith(`${this.text(call).split(' ', 1)[0]}:`)
+      ? { i: call, text: this.text(call), name: this.text(call).split(' ', 1)[0] } : undefined;
   }
   /** The compactions' view up to the node. A line still being built shows as a placeholder instead of ending the view: an A/B on
    * real turns (#101) found that cutting there also hid the built lines after it, such as an echo's own tool call. */
@@ -452,14 +466,44 @@ export class Memory {
     const needle = text.toLowerCase(), hits: Message[] = [];
     for (let i = Math.min(before, this.root.length) - 1; i >= 0; i--) {
       if (this.copiesMemory(i)) continue;
-      if (this.text(i).toLowerCase().includes(needle)) hits.push(this.root[i]);
+      if (this.searchableText(i).toLowerCase().includes(needle)) hits.push(this.root[i]);
     }
     return hits;
   }
+  /** Read only the structured adapter's AI/tool entries, never JSON pasted by a user. */
+  private loggedMessage(i: number): { role: 'ai' | 'tool'; content?: unknown; name?: string; tool_call_id?: string; tool_calls?: { id: string; name: string; args: unknown }[] } | undefined {
+    const kind = this.root[i].kind;
+    if (kind !== 'talk' && kind !== 'echo') return;
+    try {
+      const value = JSON.parse(this.text(i));
+      if (!value || value.role !== (kind === 'talk' ? 'ai' : 'tool')) return;
+      if (value.tool_calls !== undefined && (!Array.isArray(value.tool_calls) || value.tool_calls.some((call: unknown) => !call || typeof call !== 'object' || !('id' in call) || typeof call.id !== 'string' || !('name' in call) || typeof call.name !== 'string'))) return;
+      return value;
+    } catch { return; }
+  }
+  /** Match independent content and ordinary calls without memory-call query arguments polluting search.
+   * This projection is search-only: original messages, IDs and tool pairing remain intact. */
+  private searchableText(i: number) {
+    const message = this.loggedMessage(i);
+    if (message?.role !== 'ai' || !message.tool_calls?.length) return this.text(i);
+    return JSON.stringify({ ...message, tool_calls: message.tool_calls.filter(call => !this.isMemoryCopyTool(call.name)) });
+  }
+  private isMemoryCopyTool(name: string) { return /^(?:optchat_)?(?:zoom|search)$/.test(name); }
   /** A logged zoom or search call or result, which only copies memory. */
   private copiesMemory(i: number) {
     const { kind } = this.root[i];
-    return (kind === 'tool' || kind === 'echo') && /^(zoom|search)[ :]/.test(this.text(i));
+    const message = this.loggedMessage(i);
+    if (message?.role === 'tool') {
+      const call = this.callOf(i);
+      // The ID-linked call is authoritative; tool names on results are optional.
+      return call ? this.isMemoryCopyTool(call.name) : typeof message.name === 'string' && this.isMemoryCopyTool(message.name);
+    }
+    if (message?.role === 'ai') {
+      // Preserve messages that also contain independent text or other tool calls.
+      const empty = message.content === '' || (Array.isArray(message.content) && message.content.length === 0);
+      return empty && !!message.tool_calls?.length && message.tool_calls.every(call => this.isMemoryCopyTool(call.name));
+    }
+    return (kind === 'tool' || kind === 'echo') && /^(?:optchat_)?(?:zoom|search)[ :]/.test(this.text(i));
   }
   date(id: number) {
     if (!Number.isSafeInteger(id) || !this.root[id]) throw new Error(`No message ${id}.`);

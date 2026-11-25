@@ -1,3 +1,4 @@
+import type { ImageResolver } from './message-images.ts';
 import { BaseListChatMessageHistory, type BaseChatMessageHistory, InMemoryChatMessageHistory } from '@langchain/core/chat_history';
 import { SystemMessage, mapChatMessagesToStoredMessages, mapStoredMessagesToChatMessages, type BaseMessage } from '@langchain/core/messages';
 import { type BaseStore } from '@langchain/langgraph-checkpoint';
@@ -37,6 +38,7 @@ export class OptChatStoreMessageHistory extends BaseListChatMessageHistory {
 }
 
 export interface OptChatHistoryOptions {
+  resolveImage?: ImageResolver;
   compressor: Compressor;
   /** Any official BaseChatMessageHistory or BaseListChatMessageHistory implementation. */
   history?: ChatHistoryBackend;
@@ -62,7 +64,7 @@ export class OptChatMessageHistory extends BaseListChatMessageHistory {
     const next = this.tail.then(() => { if (this.closed) throw new Error('History is closed.'); return run(); });
     this.tail = next.catch(() => {}); return next;
   }
-  private async refresh(messages: BaseMessage[]) {
+  private async refresh(messages: BaseMessage[], signal?: AbortSignal) {
     const texts = messages.map(memoryText);
     const extendsCache = texts.length >= this.cached.length && this.cached.every((text, i) => texts[i] === text);
     if (!extendsCache) {
@@ -70,13 +72,21 @@ export class OptChatMessageHistory extends BaseListChatMessageHistory {
       this.cache = emptyMemory(this.options.compressor, this.options.memoryOptions);
       this.cached = [];
     }
-    appendSnapshot(this.cache, messages.slice(this.cached.length));
-    this.cached = texts;
+    try {
+      await appendSnapshot(this.cache, messages.slice(this.cached.length), this.options.resolveImage, signal);
+      this.cached = texts;
+    } catch (error) {
+      await this.cache.close();
+      this.cache = emptyMemory(this.options.compressor, this.options.memoryOptions);
+      this.cached = [];
+      throw error;
+    }
   }
   getMessages(): Promise<BaseMessage[]> { return this.serial(() => this.backend.getMessages()); }
   addMessage(message: BaseMessage) { return this.addMessages([message]); }
   addMessages(messages: BaseMessage[]) {
     return this.serial(async () => {
+      messages.forEach(memoryText);
       await this.backend.addMessages(messages);
       await this.refresh(await this.backend.getMessages());
     });
@@ -85,6 +95,7 @@ export class OptChatMessageHistory extends BaseListChatMessageHistory {
    * Backends can implement replaceMessages for atomic replacement; otherwise the official clear/add interface is used. */
   setMessages(messages: BaseMessage[]) {
     return this.serial(async () => {
+      messages.forEach(memoryText);
       if (this.backend.replaceMessages) await this.backend.replaceMessages(messages);
       else { await this.backend.clear(); await this.backend.addMessages(messages); }
       await this.refresh(messages);
@@ -100,7 +111,7 @@ export class OptChatMessageHistory extends BaseListChatMessageHistory {
   context(current: BaseMessage[], instructions?: string, signal?: AbortSignal): Promise<BaseMessage[]> {
     return this.serial(async () => {
       signal?.throwIfAborted();
-      await this.refresh(await this.backend.getMessages());
+      await this.refresh(await this.backend.getMessages(), signal);
       await this.cache.settle(signal);
       return [
         ...(instructions ? [new SystemMessage(instructions)] : []),

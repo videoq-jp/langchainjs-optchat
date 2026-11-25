@@ -62,7 +62,7 @@ Tested scenarios:
 
 ## Upstream fidelity and incremental persistence
 
-The original core binary tree and sawtooth compaction are reused unchanged. The added `checkpoint` settle mode drains currently buildable work or returns on a retry stall; it does not change node selection, merge order or view folding. Completed nodes, original entry positions and both saved views are restored at the next lifecycle hook. Model-facing memory is frozen per human/tool turn, and the previous user/final-answer exchange is replayed up to 16 KB by default.
+The original core binary tree and sawtooth compaction rules are retained; structured LangChain tool logs additionally match call/result IDs and identify retrieval copies. The added `checkpoint` settle mode drains currently buildable work or returns on a retry stall; it does not change node selection, merge order or view folding. Completed nodes, original entry positions and both saved views are restored at the next lifecycle hook. Model-facing memory is frozen per human/tool turn, and the previous user/final-answer exchange is replayed up to 16 KB by default.
 
 Normal continuation and SQLite close/reopen tests count compressor calls and assert no already-built node is recomputed. Editing/deletion tests retain unaffected prefix nodes. Time-travel forks restore their own saved prefix and exclude the other branch. Native agents register zoom/date tools, with search opt-in, and route retrieval through the selected checkpointed tree.
 
@@ -72,4 +72,13 @@ Pass official backends directly. Native hooks persist `optchat` as ordinary chec
 
 Official references: [history base class](https://reference.langchain.com/javascript/langchain-core/chat_history/BaseListChatMessageHistory), [LangGraph persistence](https://docs.langchain.com/oss/javascript/langgraph/persistence), [stores](https://docs.langchain.com/oss/javascript/langgraph/stores), [native middleware](https://docs.langchain.com/oss/javascript/langchain/middleware/custom).
 
-Executable coverage: `test/langchain.test.ts`, `test/langgraph-contracts.test.ts`, `test/optchat-incremental.test.ts`, and the packed consumer in `test/consumer-library`. The integrations compile against the installed official declaration files.
+Executable coverage: `test/langchain.test.ts`, `test/langgraph-contracts.test.ts`, `test/optchat-incremental.test.ts`, `test/langchain-compressor-completion.test.ts`, `test/image-memory.test.ts`, `test/langgraph-retrieval.test.ts`, `test/langchain-tool-semantics.test.ts`, `test/tool-semantics-integration.test.ts`, and the packed consumer in `test/consumer-library`. The integrations compile against the installed official declaration files.
+
+## Review regressions
+
+- Token-limit responses are excluded from completed summary candidates; provider metadata variants, refusals, tool calls and cancellation are covered.
+- Inline/URL-resolved image blocks feed the compressor and persist separately in checkpoints. SQLite reopen, edits/deletions, forks, resolver failure/cancellation and multimodal zoom are covered.
+- Parallel tool results match calls by ID, and search omits OptChat retrieval copies without dropping independent text or ordinary tool results. Search pagination and restored official history backends are covered.
+- Plain graphs expose `createOptChatTools(options)` for official `ToolNode` execution. Models bind the same tools; the node supplies upstream navigation. SQLite reopen, thread isolation, original IDs, forks and removals are covered.
+
+See the entry-point matrix and image resolver contract in [the integration guide](langchain.md). Core algorithm parity does not imply that a standalone history cache survives process restart; graph/agent persistence is provided by the official checkpointer.

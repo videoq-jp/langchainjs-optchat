@@ -66,17 +66,22 @@ await checkpointer.deleteThread('customer-123');
 ## StateGraphから利用
 
 ```ts
-import { StateGraph, MessagesAnnotation, MemorySaver, START, END } from '@langchain/langgraph';
-import { createOptChatNode, OptChatAnnotation } from '@videoq-jp/langchainjs-optchat/langgraph';
+import { StateGraph, MemorySaver, START, END } from '@langchain/langgraph';
+import { ToolNode, toolsCondition } from '@langchain/langgraph/prebuilt';
+import { createOptChatNode, createOptChatTools, OptChatAnnotation } from '@videoq-jp/langchainjs-optchat/langgraph';
 
+const memoryOptions = { compressor, search: true };
+const tools = createOptChatTools(memoryOptions);
 const graph = new StateGraph(OptChatAnnotation)
   .addNode('chat', createOptChatNode({
-    model: chatModel,
-    compressor,
+    ...memoryOptions,
+    model: chatModel.bindTools(tools),
     instructions: '日本語で回答してください。',
   }))
+  .addNode('tools', new ToolNode(tools))
   .addEdge(START, 'chat')
-  .addEdge('chat', END)
+  .addConditionalEdges('chat', toolsCondition, ['tools', END])
+  .addEdge('tools', 'chat')
   .compile({ checkpointer: new MemorySaver() });
 ```
 
@@ -146,3 +151,18 @@ try {
 ## ローカル版0.2からの変更
 
 公式バックエンドを直接利用する構成を標準にしました。`createAgent`は自動で要約状態を保持します。通常のStateGraphは`OptChatAnnotation`または`optchat: optChatMemorySchema`を追加してください。既存スレッドに要約状態がない場合は一度だけ木を構築し、その後は差分を引き継ぎます。
+
+## 画像・ツールと経路ごとの動作
+
+画像付き原文はそのまま保持し、要約には安定した画像参照と実体を渡します。PNG／JPEG／GIF／WebPのinline画像に対応し、公式Checkpointへ画像データも保存します。`optchat_zoom`は原文の画像ブロックも返します。HTTP(S)画像には`resolveImage(url, signal?)`を指定し、`{ mimeType, data: Uint8Array }`を返してください。取得先・認証・サイズ制限はアプリ側で管理します。チェックポイントからの再開時は保存済みデータを再利用します。画像を解釈するには画像入力対応の要約モデルが必要です。
+
+要約モデルの打ち切り・ツール応答は完成した要約として保存せず、最大5回再試行します。終了理由を返さない独自モデルでは、文章だけから打ち切りを判別できません。ツール結果は`tool_call_id`で呼び出しへ対応付け、結果の順序が変わっても名前・引数を要約へ渡します。原文検索からzoom／search自身のコピーを除外します。
+
+| 経路 | 要約状態の保持 | 詳細参照 |
+| --- | --- | --- |
+| `createAgent`ミドルウェア | 公式Checkpointerへ自動保存 | zoom／dateを自動登録、searchは任意 |
+| 通常のStateGraph | `OptChatAnnotation`等と公式Checkpointer | `createOptChatTools`をモデルと公式ToolNodeへ渡す |
+| `OptChatMessageHistory` | プロセス内キャッシュ。原文は選択した履歴バックエンドに保存し、再オープン時はキャッシュを再構築 | `context()`で更新後、`createMemoryTools`で参照 |
+| `withOptChatContext` | 単発の文脈投影。保存状態を入力可能 | 自動ツールループには上記graph／agentを使用 |
+
+あるメッセージの削除は、その内容を引用する別メッセージや過去のツール結果まで削除する操作ではありません。全文を消す場合は、それらの原本も公式APIで削除してください。

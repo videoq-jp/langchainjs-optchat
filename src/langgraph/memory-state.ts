@@ -1,3 +1,4 @@
+import type { SavedImage, ImageResolver } from '../langchain/message-images.ts';
 import { Annotation, MessagesAnnotation } from '@langchain/langgraph';
 import { z } from 'zod';
 import { SystemMessage, type BaseMessage } from '@langchain/core/messages';
@@ -6,7 +7,7 @@ import { SnapshotStore, appendSnapshot, memoryText, summaryMessage } from '../la
 
 export interface OptChatMemoryState {
   version: 1;
-  saved: { entries: Entry[]; tree: Summary[]; view?: string };
+  saved: { entries: Entry[]; tree: Summary[]; view?: string; images?: SavedImage[] };
   /** Frozen at the start of the human turn, as in the upstream Pi and Durable hosts. */
   turn?: { at: number; identity: string; view: string };
 }
@@ -20,6 +21,7 @@ export const optChatMemorySchema = z.object({
     })),
     tree: z.array(z.object({ l: z.number().int().nonnegative(), i: z.number().int().nonnegative(), text: z.string(), size: z.number().int().nonnegative() })),
     view: z.string().optional(),
+    images: z.array(z.object({ name: z.string(), mimeType: z.enum(['image/png', 'image/jpeg', 'image/gif', 'image/webp']), data: z.string() })).optional(),
   }),
   turn: z.object({ at: z.number().int().nonnegative(), identity: z.string(), view: z.string() }).optional(),
 }).optional();
@@ -29,6 +31,8 @@ export const OptChatAnnotation = Annotation.Root({
   optchat: Annotation<OptChatMemoryState | undefined>(),
 });
 export interface OptChatMemoryOptions {
+  /** Resolve HTTP(S) image blocks to immutable bytes. Inline images need no resolver. */
+  resolveImage?: ImageResolver;
   compressor: Compressor;
   memoryOptions?: MemoryOptions;
   /** Upstream default: replay the previous user/final-answer exchange up to 16 KB. Zero disables it. */
@@ -54,6 +58,7 @@ function restored(state: OptChatMemoryState | undefined, count: number) {
   if (!state || state.version !== 1) return { entries: [], tree: [] };
   return {
     entries: state.saved.entries.slice(0, count),
+    images: state.saved.images?.filter(image => state.saved.entries.slice(0, count).some(entry => entry.text.includes(`[image ${image.name}]`))),
     tree: state.saved.tree.filter(node => (node.i + 1) * 2 ** node.l <= count),
     view: count === state.saved.entries.length ? state.saved.view : truncateView(state.saved.view, count),
   };
@@ -86,7 +91,7 @@ export async function prepareOptChatTurn(messages: BaseMessage[], state: OptChat
   const { memory, store } = open(state, count, options);
   try {
     if (sameTurn) return await save(memory, store, state!.turn, signal);
-    appendSnapshot(memory, originals.slice(count, at));
+    await appendSnapshot(memory, originals.slice(count, at), options.resolveImage, signal);
     await memory.settle(signal);
     const turn = { at, identity: identity(originals, at), view: memory.render() };
     return await save(memory, store, turn, signal);
@@ -99,7 +104,7 @@ export async function recordOptChatMessages(messages: BaseMessage[], state: OptC
   const prefix = commonPrefix(state?.version === 1 ? state.saved.entries : [], originals);
   const { memory, store } = open(state, prefix, options);
   try {
-    appendSnapshot(memory, originals.slice(prefix));
+    await appendSnapshot(memory, originals.slice(prefix), options.resolveImage, signal);
     const turn = state?.turn && prefix >= state.turn.at ? state.turn : undefined;
     return await save(memory, store, turn, signal);
   } finally { await memory.close(); }
