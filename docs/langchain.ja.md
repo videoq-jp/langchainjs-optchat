@@ -4,14 +4,10 @@
 
 ## 導入
 
-まだnpmには公開していません。
+npmの組織スコープで公開しています。
 
 ```sh
-# このリポジトリで実行
-npm ci
-npm pack
-# 利用側で実行。実際のパスに変更
-npm install /path/to/videoq-jp-langchainjs-optchat-0.3.0.tgz
+npm install @videoq-jp/langchainjs-optchat
 # createAgent用ミドルウェアを使う場合
 npm install langchain@^1.6.8
 ```

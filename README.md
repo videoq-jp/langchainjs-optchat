@@ -8,15 +8,11 @@ This independent integration adapts the MIT-licensed memory engine from [jonasls
 
 ## Install
 
-This package has not been published to npm. Source and tracked fixes: [videoq-jp/langchainjs-optchat](https://github.com/videoq-jp/langchainjs-optchat). See [release preparation](docs/npm-release.md).
+Published package: [@videoq-jp/langchainjs-optchat](https://www.npmjs.com/package/@videoq-jp/langchainjs-optchat). Source and tracked fixes: [videoq-jp/langchainjs-optchat](https://github.com/videoq-jp/langchainjs-optchat). See [release preparation](docs/npm-release.md).
 
 ```sh
-# In this checkout
-npm ci
-npm pack
-# In your application (adjust the path)
-npm install /path/to/videoq-jp-langchainjs-optchat-0.3.0.tgz
-# When using native createAgent middleware
+npm install @videoq-jp/langchainjs-optchat
+# For native createAgent middleware
 npm install langchain@^1.6.8
 ```
 

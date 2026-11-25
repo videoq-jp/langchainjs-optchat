@@ -4,14 +4,10 @@
 
 ## Install
 
-This checkout is not yet published:
+Install the public organization-scoped package:
 
 ```sh
-# In this checkout
-npm ci
-npm pack
-# In your application
-npm install /path/to/videoq-jp-langchainjs-optchat-0.3.0.tgz
+npm install @videoq-jp/langchainjs-optchat
 # For native createAgent middleware
 npm install langchain@^1.6.8
 ```

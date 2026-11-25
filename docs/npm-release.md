@@ -1,6 +1,6 @@
 # npm公開の準備
 
-パッケージ名: `@videoq-jp/langchainjs-optchat`。公開先リポジトリ: https://github.com/videoq-jp/langchainjs-optchat 。現時点ではnpm未公開。名前の取得は公開時に確定する。
+パッケージ名: `@videoq-jp/langchainjs-optchat`。公開先リポジトリ: https://github.com/videoq-jp/langchainjs-optchat 。初回公開バージョンは`0.3.0`。GitHubとnpmの両方で`videoq-jp`組織を使用する。
 
 ## 初回リリースの完了条件
 
