@@ -1,0 +1,27 @@
+[
+  {
+    "title": "[P2] LangChainコンプレッサーが打ち切られた応答を正常な要約として保存する",
+    "body_file": "docs/issues/01-truncated-summary.md",
+    "url": "https://github.com/yukiharada1228/langchain-optchat/issues/1"
+  },
+  {
+    "title": "[P2] 履歴の画像をOptChatの画像入力へ変換し、要約と詳細参照を維持する",
+    "body_file": "docs/issues/02-image-memory.md",
+    "url": "https://github.com/yukiharada1228/langchain-optchat/issues/2"
+  },
+  {
+    "title": "[P2] ツール結果の要約へ対応する呼び出し・引数を渡す",
+    "body_file": "docs/issues/03-tool-call-context.md",
+    "url": "https://github.com/yukiharada1228/langchain-optchat/issues/3"
+  },
+  {
+    "title": "[P2] 元履歴検索からOptChat自身のzoom／searchの呼び出しと結果を除外する",
+    "body_file": "docs/issues/04-retrieval-search.md",
+    "url": "https://github.com/yukiharada1228/langchain-optchat/issues/4"
+  },
+  {
+    "title": "[P2] plain LangGraphでも保存済みOptChatツリーに対するzoom／date／searchを接続できるようにする",
+    "body_file": "docs/issues/05-graph-retrieval.md",
+    "url": "https://github.com/yukiharada1228/langchain-optchat/issues/5"
+  }
+]

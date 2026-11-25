@@ -9,11 +9,11 @@ https://gist.github.com/VictorTaelin/91837951a5ce5b38f341ec1ba1df6449
 
 That upstream text is credited to Victor Taelin and is not relicensed by this
 repository's MIT grant for original implementation code. The complete recipe
-is linked upstream. This project is an independent Pi extension.
+is linked upstream. This project is an independent LangChain.js/LangGraph.js library derived from pi-optchat.
 
 ## Pi
 
-The extension uses Pi's host-provided SDK packages. Pi is distributed under the
+The retained upstream source and regression tests use Pi SDK packages as development dependencies; the published library does not require the Pi runtime. Pi is distributed under the
 MIT license:
 
 https://github.com/earendil-works/pi

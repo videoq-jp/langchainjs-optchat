@@ -1,4 +1,4 @@
-import type { ImageContent } from '@earendil-works/pi-ai';
+import type { ImageContent } from './content.ts';
 import { namedImages } from './images.ts';
 import type { Saved, Store } from './store.ts';
 
@@ -390,10 +390,12 @@ export class Memory {
   /** A 'turn' waits until every part of the view is built, or until everything pending has failed: it then goes on with placeholders
    * for the missing lines, `lastError` says why, and the failed nodes are still retried in the background. 'tree' waits for every
    * node, through failures. As in the recipe, the view may run over budget until pending merges land.
+   * 'checkpoint' drains buildable nodes/merges or returns on a retry stall, for a host persisting the complete state.
    * 'ahead' (imports) waits until a new message's node would start at once. Due merges count too: messages go first, so a steady
    * stream of them would otherwise take every worker and the views could never merge. */
-  async settle(signal?: AbortSignal, until: 'turn' | 'tree' | 'ahead' = 'turn'): Promise<void> {
-    const done = () => until === 'tree' ? this.ready && this.busy.size === 0 && this.tree.size === this.expectedNodes()
+  async settle(signal?: AbortSignal, until: 'turn' | 'tree' | 'ahead' | 'checkpoint' = 'turn'): Promise<void> {
+    const done = () => until === 'checkpoint' ? (this.busy.size === 0 && this.tree.size === this.expectedNodes()) || this.stalled
+      : until === 'tree' ? this.ready && this.busy.size === 0 && this.tree.size === this.expectedNodes()
       : until === 'ahead' ? this.unbuilt.size + this.merges.size < this.jobs
       : this.ready || this.stalled;
     if (done()) return;
@@ -462,6 +464,11 @@ export class Memory {
   date(id: number) {
     if (!Number.isSafeInteger(id) || !this.root[id]) throw new Error(`No message ${id}.`);
     return new Date(this.root[id].date).toString();
+  }
+  /** Wait for queued store writes and surface a failed append. Does not wait for background summaries. */
+  async flush() {
+    while (this.writing) await this.writing;
+    if (this.failed) throw new Error(`Memory could not be saved: ${this.failed}`);
   }
   async close() {
     this.stopped = true; this.controller.abort(); clearTimeout(this.retryTimer);

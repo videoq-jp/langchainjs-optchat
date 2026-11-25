@@ -106,7 +106,7 @@ export class FileStore implements Store {
   appendNode(node: Summary): undefined { appendJson(join(this.directory, 'tree', `${localDay()}.jsonl`), node); this.summaries.set(`${node.l}:${node.i}`, node.text); }
   saveView(view: string): undefined { atomicWrite(join(this.directory, 'view.json'), view); }
   putImage(name: string, mimeType: Mime, data: Uint8Array): undefined { atomicWrite(join(this.directory, 'images', `${name}.${EXTENSIONS[mimeType]}`), data); }
-  image(name: string) {
+  image(name: string): { mimeType: Mime; data: Uint8Array } | undefined {
     let file: string | undefined;
     try { file = readdirSync(join(this.directory, 'images')).find(f => f.startsWith(`${name}.`) && MIMES.has(f.slice(name.length + 1))); } catch { return undefined; }
     const mimeType = file && MIMES.get(file.slice(name.length + 1));
@@ -122,7 +122,7 @@ export class FileReader extends FileStore {
   override putImage(): undefined {}
 }
 /** The image kept under `name` in the memory in `directory`, read without opening the memory. */
-export const readImage = (directory: string, name: string) => new FileReader(directory, () => {}).image(name);
+export const readImage = (directory: string, name: string): { mimeType: Mime; data: Uint8Array } | undefined => new FileReader(directory, () => {}).image(name);
 /** Changes whenever the memory in `directory` does: its logs only grow and its view is replaced. Images are left out: each is
  * kept before the message that names it, under a name taken from its bytes, and never replaced, so a new one comes with a new message. */
 export function fingerprint(directory: string) {

@@ -1,4 +1,4 @@
-import type { ImageContent } from '@earendil-works/pi-ai';
+import type { ImageContent } from './content.ts';
 import type { Store } from './store.ts';
 
 /** How a message's image reads in memory: `[image <16 hex digits>]`, named by the host (Pi: a hash of the image as sent). */

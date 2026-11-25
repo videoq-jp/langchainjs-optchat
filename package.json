@@ -1,32 +1,37 @@
 {
-  "name": "pi-optchat",
-  "version": "0.12.6",
+  "name": "langchain-optchat",
+  "version": "0.3.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./dist/library-index.d.ts",
+      "import": "./dist/library-index.js"
+    },
     "./core": {
-      "types": "./dist/core/index.d.ts",
-      "import": "./dist/core/index.js"
+      "types": "./dist/library.d.ts",
+      "import": "./dist/library.js"
     },
-    "./durable": {
-      "types": "./dist/durable/index.d.ts",
-      "import": "./dist/durable/index.js"
+    "./langchain": {
+      "types": "./dist/langchain/index.d.ts",
+      "import": "./dist/langchain/index.js"
     },
-    "./files": {
-      "types": "./dist/files.d.ts",
-      "import": "./dist/files.js"
+    "./langgraph": {
+      "types": "./dist/langgraph/index.d.ts",
+      "import": "./dist/langgraph/index.js"
     },
-    "./package.json": "./package.json"
-  },
-  "pi": {
-    "extensions": [
-      "./src/index.ts"
-    ],
-    "image": "https://raw.githubusercontent.com/jonaslsaa/pi-optchat/main/docs/banner.jpg"
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json",
+    "./middleware": {
+      "types": "./dist/middleware/index.d.ts",
+      "import": "./dist/middleware/index.js"
+    }
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node scripts/build.mjs",
     "prepack": "npm run build",
     "test": "tsx --import ./test/support.ts --test test/*.test.ts",
     "test:live": "tsx test/live.ts"
@@ -39,64 +44,61 @@
     "@earendil-works/pi-coding-agent": "1.6.0",
     "@earendil-works/pi-durable": "1.6.0",
     "@earendil-works/pi-tui": "1.6.0",
+    "@langchain/core": "^1.5.1",
+    "@langchain/langgraph": "^1.7.5",
+    "@langchain/langgraph-checkpoint": "^1.2.3",
+    "@langchain/langgraph-checkpoint-sqlite": "^1.1.1",
     "@types/node": "^22.20.5",
+    "langchain": "^1.6.8",
     "tsx": "^4.23.15",
-    "typebox": "1.3.27",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
-    "@earendil-works/pi-agent-core": ">=1.2",
-    "@earendil-works/pi-ai": ">=1.2",
-    "@earendil-works/pi-coding-agent": ">=1.2",
-    "@earendil-works/pi-durable": "~1.5.0 || ~1.6.0",
-    "@earendil-works/pi-tui": ">=1.2",
-    "typebox": "*"
+    "@langchain/core": "^1.5.1",
+    "zod": "^4.6.7",
+    "@langchain/langgraph": "^1.7.5",
+    "@langchain/langgraph-checkpoint": "^1.2.3",
+    "langchain": "^1.6.8"
   },
-  "peerDependenciesMeta": {
-    "@earendil-works/pi-agent-core": {
-      "optional": true
-    },
-    "@earendil-works/pi-ai": {
-      "optional": true
-    },
-    "@earendil-works/pi-coding-agent": {
-      "optional": true
-    },
-    "@earendil-works/pi-durable": {
-      "optional": true
-    },
-    "@earendil-works/pi-tui": {
-      "optional": true
-    }
-  },
-  "description": "OptChat memory for Pi: persistent profiles, zoomable history, background agents, and conversation imports.",
+  "description": "OptChat summary-tree conversation memory for LangChain.js and LangGraph.js.",
   "keywords": [
-    "pi-package",
-    "pi-extension",
+    "langchain",
+    "langgraph",
     "optchat",
-    "uniichat",
-    "memory",
-    "subagents"
+    "chat-history",
+    "conversation-memory",
+    "summary-tree"
   ],
   "author": "Jonas",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jonaslsaa/pi-optchat.git"
-  },
-  "homepage": "https://github.com/jonaslsaa/pi-optchat#readme",
-  "bugs": {
-    "url": "https://github.com/jonaslsaa/pi-optchat/issues"
-  },
   "engines": {
     "node": ">=22.19.0"
   },
   "files": [
-    "src",
     "dist",
-    "docs/*.md",
+    "docs/langchain*.md",
     "README.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md"
-  ]
+  ],
+  "dependencies": {
+    "typebox": "1.3.27"
+  },
+  "peerDependenciesMeta": {
+    "langchain": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yukiharada1228/langchain-optchat.git"
+  },
+  "homepage": "https://github.com/yukiharada1228/langchain-optchat#readme",
+  "bugs": {
+    "url": "https://github.com/yukiharada1228/langchain-optchat/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

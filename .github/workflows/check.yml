@@ -14,16 +14,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npm rebuild better-sqlite3
       - run: npm run check
       - run: npm test
-      # A Cloudflare Workers app with stricter settings than ours typechecks the packed package, as installed from npm.
-      - name: Strict Workers app typechecks the package
+      - name: Packed library typechecks and runs without Pi
         run: |
           npm pack --pack-destination "$RUNNER_TEMP"
-          mkdir -p test/consumer-workers/node_modules/pi-optchat
-          tar -xzf "$RUNNER_TEMP"/pi-optchat-*.tgz --strip-components=1 -C test/consumer-workers/node_modules/pi-optchat
-          npx tsc -p test/consumer-workers
-          cd test/consumer-workers && node --input-type=module -e "await import('pi-optchat/core'); await import('pi-optchat/durable')"
+          cp -R test/consumer-library "$RUNNER_TEMP/consumer-library"
+          cd "$RUNNER_TEMP/consumer-library"
+          npm install "$RUNNER_TEMP"/langchain-optchat-*.tgz --ignore-scripts
+          npm run check
+          npm run smoke
   windows:
     runs-on: windows-latest
     steps:
@@ -33,5 +34,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: npm rebuild better-sqlite3
       - run: npm run check
       - run: npm test

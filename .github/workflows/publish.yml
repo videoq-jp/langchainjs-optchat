@@ -41,16 +41,18 @@ jobs:
       - name: Skip if already on npm
         id: published
         run: |
-          status=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/pi-optchat/$VERSION")
+          status=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/langchain-optchat/$VERSION")
           case $status in
             200)
-              echo "::notice::pi-optchat@$VERSION is already on npm, nothing to publish"
+              echo "::notice::langchain-optchat@$VERSION is already on npm, nothing to publish"
               echo "done=true" >> "$GITHUB_OUTPUT" ;;
             404) ;;
             *) echo "::error::npm registry answered $status"; exit 1 ;;
           esac
       - if: steps.published.outputs.done != 'true'
         run: npm ci --ignore-scripts
+      - if: steps.published.outputs.done != 'true'
+        run: npm rebuild better-sqlite3
       - if: steps.published.outputs.done != 'true'
         run: npm run check
       - if: steps.published.outputs.done != 'true'
