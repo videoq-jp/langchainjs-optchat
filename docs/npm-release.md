@@ -15,3 +15,9 @@
 初回は必要な二要素認証を満たすnpmアカウントで`npm publish --access public`を実行する。初回公開後、npm上でこのリポジトリの`.github/workflows/publish.yml`（environment: `npm`）をTrusted Publisherとして登録し、GitHub側にも対応するEnvironmentを構成する。以後はpackage.jsonのバージョンと一致する`v<version>`タグのGitHub Releaseで公開できる。認証情報をリポジトリへ保存しない。
 
 GitHub Issueの作成やソースのpushだけではnpm公開されない。公開操作は修正・検証を終えたリリースに対して実施する。
+
+## 継続リリースとmain保護
+
+バージョンを上げるときは、作業ブランチでpackage.jsonとpackage-lock.jsonを更新し、PRのCIとマージキューの統合CIを通す。マージ済みmainのリリース対象commitに `v<version>` タグを作り、GitHub Releaseを公開する。`Publish` が既存の `npm` environmentとTrusted Publisherを使って公開する。
+
+再実行はActionsの `Publish` で既存タグを指定できる。同じバージョンがnpmに存在するときは公開をスキップする。依存更新Botのマージだけでは、新しいリリースやnpm公開は作成されない。
