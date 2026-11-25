@@ -1,6 +1,6 @@
 # npm公開の準備
 
-パッケージ名: `langchain-optchat`。公開先リポジトリ: https://github.com/yukiharada1228/langchain-optchat 。現時点ではnpm未公開。名前の取得は公開時に確定する。
+パッケージ名: `langchain-optchat`。公開先リポジトリ: https://github.com/videoq-jp/langchain-optchat 。現時点ではnpm未公開。名前の取得は公開時に確定する。
 
 ## 初回リリースの完了条件
 

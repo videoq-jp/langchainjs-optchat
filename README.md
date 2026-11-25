@@ -8,7 +8,7 @@ This independent integration adapts the MIT-licensed memory engine from [jonasls
 
 ## Install
 
-This package has not been published to npm. Source and tracked fixes: [yukiharada1228/langchain-optchat](https://github.com/yukiharada1228/langchain-optchat). See [release preparation](docs/npm-release.md).
+This package has not been published to npm. Source and tracked fixes: [videoq-jp/langchain-optchat](https://github.com/videoq-jp/langchain-optchat). See [release preparation](docs/npm-release.md).
 
 ```sh
 # In this checkout

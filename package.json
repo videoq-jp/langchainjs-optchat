@@ -92,11 +92,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yukiharada1228/langchain-optchat.git"
+    "url": "git+https://github.com/videoq-jp/langchain-optchat.git"
   },
-  "homepage": "https://github.com/yukiharada1228/langchain-optchat#readme",
+  "homepage": "https://github.com/videoq-jp/langchain-optchat#readme",
   "bugs": {
-    "url": "https://github.com/yukiharada1228/langchain-optchat/issues"
+    "url": "https://github.com/videoq-jp/langchain-optchat/issues"
   },
   "publishConfig": {
     "access": "public"
