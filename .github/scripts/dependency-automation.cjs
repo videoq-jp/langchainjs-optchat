@@ -2,7 +2,6 @@
 function requireCiSuccess(results) {
   const expected = [
     "test",
-    "integration",
     "package",
     "workflow-security",
     "supply-chain",

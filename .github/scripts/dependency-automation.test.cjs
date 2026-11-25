@@ -4,7 +4,6 @@ const { requireCiSuccess } = require("./dependency-automation.cjs");
 test("CI aggregate fails closed for missing, failed, skipped and additional jobs", () => {
   const jobs = [
     "test",
-    "integration",
     "package",
     "workflow-security",
     "supply-chain",
@@ -21,4 +20,11 @@ test("CI aggregate fails closed for missing, failed, skipped and additional jobs
   assert.throws(() =>
     requireCiSuccess({ ...good, extra: { result: "success" } }),
   );
+});
+
+test("aggregate accepts exactly the real workflow dependencies", () => {
+  const fs = require("node:fs"); const path = require("node:path");
+  const workflow = fs.readFileSync(path.join(__dirname, "../workflows/ci.yml"), "utf8");
+  const dependencies = /ci-success:[\s\S]*?needs: \[([^\]]+)\]/.exec(workflow)[1].split(",").map(x => x.trim());
+  assert.doesNotThrow(() => requireCiSuccess(Object.fromEntries(dependencies.map(x => [x, {result: "success"}]))));
 });
