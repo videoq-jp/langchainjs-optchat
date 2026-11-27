@@ -18,7 +18,10 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm install -g @earendil-works/pi-coding-agent@1.1.0
+      - name: Install the Dependabot-managed interactive CLI
+        run: |
+          $piVersion = node -p "require('./.github/windows-live-tools/package.json').dependencies['@earendil-works/pi-coding-agent']"
+          npm install --global "@earendil-works/pi-coding-agent@$piVersion"
       - id: upterm
         uses: owenthereal/action-upterm@6c2d60e09009f59cb4c45c88767c78701f14d121 # v2
         with:

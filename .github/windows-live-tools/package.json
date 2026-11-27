@@ -1,0 +1,8 @@
+{
+  "name": "videoq-windows-live-tools",
+  "private": true,
+  "description": "Interactive Windows live-session CLI maintained by Dependabot.",
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "1.1.0"
+  }
+}
