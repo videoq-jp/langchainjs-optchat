@@ -29,3 +29,5 @@ npm の要求バージョンは `.github/runtime-tools/package.json` の依存�
 要求バージョンの PR は既存の自動マージ許可範囲に含めず、レビュー対象とします。生成 PR は既存の CI・Merge Queue を通し、新メジャーは引き続き手動レビューします。PR に対して書き込み権限を持つ同期ワークフローを追加せず、既存の検証・生成処理を利用します。
 
 Node.js の `.node-version` / `.nvmrc` は Dependabot の直接の更新対象ではないため、Node.js の公式リリース探索は残します。上流コードの同期と互換性修正、Claude による CI 修復も、それぞれの既存処理が担当します。
+
+Windows の対話テスト用 CLI も `.github/windows-live-tools/package.json` で宣言し、Dependabot の更新対象にします。手動起動ワークフローはこの依存定義から指定版を読み取ってインストールします。
